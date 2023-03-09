@@ -109,7 +109,6 @@ public class HovercarController : MonoBehaviour {
         updateTargetAltitue();
         moveShipHorizonal();
         moveToTargetAltitude();
-        applyTargetTorque();
         rotateSails();
         UpdateUprightForce();
     }
@@ -158,10 +157,6 @@ public class HovercarController : MonoBehaviour {
         }
         
 
-    }
-    
-    private void applyTargetTorque() {
-        // TODO make another pid to control torque
     }
 
     private void moveToTargetAltitude() {
