@@ -17,14 +17,26 @@ public class HovercarController : MonoBehaviour {
     
     [Header("Movement Settings")]
     [SerializeField]
-    private float speedFactor = 10f;
+    private float accelerationRate = 10f;
+    
     [SerializeField]
-    [Tooltip("How fast the ship can change altitude, normally.")]
+    [Tooltip("Maximum horizontal speed of hovercar")]
     private float maxSpeed = 40f;
-    private float minSpeed = 40f;
+    
+    [SerializeField] [Tooltip("Rate the hovercar will stop moving when no input is given")] 
+    private float carDrag = 0.1f;
+    
     [SerializeField]
-    [Tooltip("How fast the ship can change altitude, normally.")]
-    private float sailsSpeed = 40f;
+    [Tooltip("How fast the ship can change altitude, affected by hovercar mass.")]
+    private float verticalAcceleration = 40f;
+    
+    // private float minSpeed = 40f;
+    [SerializeField]
+    [Tooltip("How fast the ship can change direction, normally.")]
+    private float turnRate = 400f;
+
+    [SerializeField] [Tooltip("Rate the hovercar will stop turning when no input is given")] 
+    private float turnDrag = 0.1f;
     
     [Header("Input")]
 
@@ -109,14 +121,42 @@ public class HovercarController : MonoBehaviour {
 
         Vector3 direction = forwardForce + sideForce;
         
-        rb.AddForce(direction * speedFactor, ForceMode.Force);
+        rb.AddForce(direction * accelerationRate, ForceMode.Force);
+        
+        // Limit speed
+        if (rb.velocity.magnitude > maxSpeed) {
+            rb.velocity = rb.velocity.normalized * maxSpeed;
+        }
+        
+        if (move.x == 0 && move.y == 0) {
+            
+            // When there is no input on the move vector, slowly kill horizontal velocity, but allow vertical velocity
+            // to continue increasing using the Mathf.MoveTowards function.
+            Vector3 newVelocity = new Vector3(
+                Mathf.MoveTowards(rb.velocity.x, 0, carDrag * Time.deltaTime), 
+                rb.velocity.y, 
+                Mathf.MoveTowards(rb.velocity.z, 0, carDrag * Time.deltaTime)
+            );
+            
+            rb.velocity = newVelocity;
+            
+        }
         
     }
 
     private void rotateSails() {
         // TODO add pid controller to set target to rotate to
         // Multiplying by 40 as a hack because I thought turn was too low. //TODO make setting
-        rb.AddTorque(Vector3.up * (sails * 40 * speedFactor * Time.deltaTime), ForceMode.Force);
+
+        if (sails != 0) {
+            rb.AddTorque(Vector3.up * (sails * turnRate * Time.deltaTime), ForceMode.Force);
+
+        } else {
+            
+            // When no input is read on sails i.e. "0" the ship will slowly stop turning
+            rb.AddTorque(-rb.angularVelocity * turnDrag, ForceMode.Force);
+        }
+        
 
     }
     
@@ -137,8 +177,10 @@ public class HovercarController : MonoBehaviour {
         if (input > 0) {
             
             // Not related to base PID controller function, limits ascent speed
+            // Warning: Unintentially related to PID controller. If the verticalAcceleration is too low
+            // the PID controller will not be able to reach the target altitude.
             var localMin = float.MinValue;
-            Vector3 newThrust = new Vector3(0, Mathf.Clamp(input, localMin, maxSpeed), 0);
+            Vector3 newThrust = new Vector3(0, Mathf.Clamp(input, localMin, verticalAcceleration), 0);
             //------------------------------------------------------------
 
             rb.AddForce(newThrust, ForceMode.Force);
