@@ -94,19 +94,18 @@ public class HovercarController : MonoBehaviour {
     }
 
     private void FixedUpdate() {
+        updateTargetAltitue();
         moveShipHorizonal();
         moveToTargetAltitude();
         applyTargetTorque();
         rotateSails();
-        updateTargetAltitue();
         UpdateUprightForce();
     }
 
     private void moveShipHorizonal() {
         Vector3 forwardForce = transform.forward * move.y;
         
-        // DEV: testing out only allowing movement in the y axis, so multiplying by 0
-        Vector3 sideForce = transform.right * move.x * 0;
+        Vector3 sideForce = transform.right * move.x;
 
         Vector3 direction = forwardForce + sideForce;
         
@@ -155,6 +154,11 @@ public class HovercarController : MonoBehaviour {
                 targetAltitude.y + (altitude * devTargetAltitudeSpeed * Time.deltaTime), 
                 shipPosition.z
             );
+        RaycastHit hit;
+        float targetFloatAboveGround = 2f;
+        if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.down), out hit, Mathf.Infinity)) {
+            targetAltitude = new Vector3(0, (transform.position.y - hit.distance) + targetFloatAboveGround, 0);
+        }
     }
 
     [SerializeField] private float _uprightStrength = 10f;
