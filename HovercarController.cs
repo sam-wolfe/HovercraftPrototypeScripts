@@ -24,7 +24,7 @@ public class HovercarController : MonoBehaviour {
     private float maxSpeed = 40f;
     
     [SerializeField] [Tooltip("Rate the hovercar will stop moving when no input is given")] 
-    private float carDrag = 0.1f;
+    private float carDrag = 20f;
     
     [SerializeField]
     [Tooltip("How fast the ship can change altitude, affected by hovercar mass.")]
@@ -36,7 +36,7 @@ public class HovercarController : MonoBehaviour {
     private float turnRate = 400f;
 
     [SerializeField] [Tooltip("Rate the hovercar will stop turning when no input is given")] 
-    private float turnDrag = 0.1f;
+    private float turnDrag = 10f;
     
     [Header("Input")]
 
