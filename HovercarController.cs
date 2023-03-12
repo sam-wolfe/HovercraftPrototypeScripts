@@ -43,8 +43,20 @@ public class HovercarController : MonoBehaviour {
     private float turnDrag = 10f;
     
     [SerializeField]
-    [Range(100, 1000)]
     private float brakeForce = 500f;
+    [SerializeField]
+    [Range(100, 1000)]
+    private float maxBrakeForce = 500f;
+    
+    [SerializeField]
+    [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
+    [Range(1, 10)]
+    private float breakRefilRate = 4f;
+
+    [SerializeField] 
+    [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
+    [Range(1, 2000)]
+    private float breakDepleteRate = 800f;
     
     [Header("Input")]
 
@@ -82,6 +94,8 @@ public class HovercarController : MonoBehaviour {
         targetAltitude = transform.position;
         
         Cursor.lockState = CursorLockMode.Locked;
+        
+        brakeForce = maxBrakeForce;
     }
 
     void Update() {
@@ -112,10 +126,25 @@ public class HovercarController : MonoBehaviour {
     }
     
     private void UpdateLateralBreak() {
+        depleteBreakGuage();
+        
         if (lateralBrake > 0) {
+            //Apply force until sideways velocity is 0 but retain forward and backward velocity
+            
             rb.AddForce(-transform.right * lateralBrake * brakeForce, ForceMode.Force);
         } else if (lateralBrake < 0) {
             rb.AddForce(transform.right * -lateralBrake * brakeForce, ForceMode.Force);
+        }
+    }
+
+    private void depleteBreakGuage() {
+        // while lateralBreak != 0, reduce breakForce to 0 over 1 second.
+        // when lateralBreak == 0, increase breakForce to max over 10 seconds.
+        // TODO make this a setting
+        if (lateralBrake != 0) {
+            brakeForce = Mathf.MoveTowards(brakeForce, 0, breakDepleteRate * Time.deltaTime);
+        } else {
+            brakeForce = Mathf.MoveTowards(brakeForce, maxBrakeForce, breakDepleteRate / breakRefilRate * Time.deltaTime);
         }
     }
 
