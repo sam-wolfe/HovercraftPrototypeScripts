@@ -9,6 +9,8 @@ public class InputManager : MonoBehaviour {
     public Vector2 move { get; private set; }
     public float sails { get; private set; }
     
+    public float lateralBrake { get; private set; }
+    
     public void OnAltitude(InputAction.CallbackContext context) {
         float newAltitude = context.ReadValue<float>();
 
@@ -26,5 +28,9 @@ public class InputManager : MonoBehaviour {
     public void OnSail(InputAction.CallbackContext context) {
         sails = context.ReadValue<float>();;
         // Debug.Log(sails);
+    }
+    
+    public void OnLateralBrake(InputAction.CallbackContext context) {
+        lateralBrake = context.ReadValue<float>();
     }
 }

@@ -27,10 +27,19 @@
                     "name": "Sail",
                     "type": "PassThrough",
                     "id": "542a0c4f-7351-4556-8a60-2c0811c3ca97",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "Axis",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "LateralBrakes",
+                    "type": "Value",
+                    "id": "8db08609-88aa-4439-9868-53cf92189a1a",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -152,6 +161,39 @@
                     "processors": "",
                     "groups": "",
                     "action": "Sail",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "4c43d832-1f7d-4ded-b65a-5fe8f42acb2f",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LateralBrakes",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "1a9f92c2-0a59-4394-a4e7-f396e4b2f07f",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LateralBrakes",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "c3e070f1-7595-4640-bca8-41890e8f5c7d",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LateralBrakes",
                     "isComposite": false,
                     "isPartOfComposite": true
                 }

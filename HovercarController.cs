@@ -42,6 +42,10 @@ public class HovercarController : MonoBehaviour {
     [Range(0.1f, 40f)]
     private float turnDrag = 10f;
     
+    [SerializeField]
+    [Range(100, 1000)]
+    private float brakeForce = 500f;
+    
     [Header("Input")]
 
     // TODO make interface that inputs share
@@ -56,11 +60,16 @@ public class HovercarController : MonoBehaviour {
     [SerializeField] private float dTerm = 0f;
     
     
+    [SerializeField] private float _uprightStrength = 10f;
+    [SerializeField] private float _uprightStrengthDamper = 0.5f;
+
+    
     // ########################################
 
     private Vector2 move;
     private float altitude;
     private float sails;
+    private float lateralBrake;
 
     private Rigidbody rb;
 
@@ -82,6 +91,7 @@ public class HovercarController : MonoBehaviour {
         move = _input.move;
         altitude = _input.altitude;
         sails = _input.sails;
+        lateralBrake = _input.lateralBrake;
         
     }
 
@@ -98,6 +108,15 @@ public class HovercarController : MonoBehaviour {
         moveToTargetAltitude();
         rotateSails();
         UpdateUprightForce();
+        UpdateLateralBreak();
+    }
+    
+    private void UpdateLateralBreak() {
+        if (lateralBrake > 0) {
+            rb.AddForce(-transform.right * lateralBrake * brakeForce, ForceMode.Force);
+        } else if (lateralBrake < 0) {
+            rb.AddForce(transform.right * -lateralBrake * brakeForce, ForceMode.Force);
+        }
     }
 
     private void moveShipHorizonal() {
@@ -127,7 +146,6 @@ public class HovercarController : MonoBehaviour {
             rb.velocity = newVelocity;
             
         }
-        
     }
 
     private void rotateSails() {
@@ -142,8 +160,6 @@ public class HovercarController : MonoBehaviour {
             // When no input is read on sails i.e. "0" the ship will slowly stop turning
             rb.AddTorque(-rb.angularVelocity * turnDrag, ForceMode.Force);
         }
-        
-
     }
 
     private void moveToTargetAltitude() {
@@ -185,9 +201,6 @@ public class HovercarController : MonoBehaviour {
         }
     }
 
-    [SerializeField] private float _uprightStrength = 10f;
-    [SerializeField] private float _uprightStrengthDamper = 0.5f;
-
     private Quaternion ShortestRotation(Quaternion to, Quaternion from) {
         if (Quaternion.Dot(to, from) < 0) {
             return to * Quaternion.Inverse(Multiply(from, -1));
@@ -217,7 +230,6 @@ public class HovercarController : MonoBehaviour {
         float rotRadians = rotDegrees * Mathf.Deg2Rad;
         
         rb.AddTorque((rotAxis * (rotRadians * _uprightStrength))- (rb.angularVelocity * _uprightStrengthDamper));
-
     }
 
 }
