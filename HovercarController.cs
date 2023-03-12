@@ -40,24 +40,7 @@ public class HovercarController : MonoBehaviour {
 
     // TODO make interface that inputs share
     [SerializeField] private InputManager _input;
-    
-    [Space(10)]
-    [Header("Look Settings / Cinemachine")]
-        
-    [SerializeField]
-    [Tooltip("The follow target set in the Cinemachine Virtual Camera that the camera will follow")]
-    private GameObject CinemachineCameraTarget;
 
-    [SerializeField] [Tooltip("Rotation speed of the character")]
-    private float RotationSpeed = 1.0f;
-
-    [SerializeField] [Tooltip("How far in degrees can you move the camera down")]
-    private float BottomClamp = 80.0f;
-
-    [SerializeField] [Tooltip("How far in degrees can you move the camera up")]
-    private float TopClamp = -70.0f;
-    
-        
     [Header("Dev")]
     [SerializeField] private float devTargetAltitudeSpeed = 5f;
     
