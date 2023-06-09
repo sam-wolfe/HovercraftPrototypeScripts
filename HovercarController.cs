@@ -1,3 +1,4 @@
+using Cinemachine;
 using DefaultNamespace;
 using UnityEngine;
 
@@ -57,11 +58,28 @@ public class HovercarController : MonoBehaviour {
     [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
     [Range(1, 2000)]
     private float breakDepleteRate = 800f;
+
+    [SerializeField]
+    [Tooltip("Gameobject that the camera uses to rotate around when aiming guns.")]
+    private GameObject aimTarget;
+    [SerializeField] private float aimTurnRate = 100f;
+    [SerializeField] private float aimTurnDamper = 0.5f;
+    private Vector3 AIM_TARGET_DEFAULT_ROTATION = new Vector3(0, 0, 0);
+    
+    public float aimSmoothTime = 0.1f;
+    private Vector3 aimTargetDefaultRotation;
+    private Vector3 targetRotation;
+    private Vector3 rotationVelocity;
+    [SerializeField] private GameObject aimIKTarget;
     
     [Header("Input")]
 
     // TODO make interface that inputs share
-    [SerializeField] private InputManager _input;
+    [SerializeField] private InputManager _playerInput;
+
+    [SerializeField] private EnemyAI _enemyAi;
+    
+    private ReadableInput _input;
 
     [Header("Dev")]
     [SerializeField] private float devTargetAltitudeSpeed = 5f;
@@ -74,14 +92,16 @@ public class HovercarController : MonoBehaviour {
     
     [SerializeField] private float _uprightStrength = 10f;
     [SerializeField] private float _uprightStrengthDamper = 0.5f;
+    
+    // CM Virtual camera to switch to when aiming
+    [SerializeField] private CinemachineVirtualCamera _aimingCamera;
 
     
-    // ########################################
-
     private Vector2 move;
     private float altitude;
     private float sails;
     private float lateralBrake;
+    private bool aim;
 
     private Rigidbody rb;
 
@@ -96,17 +116,40 @@ public class HovercarController : MonoBehaviour {
         Cursor.lockState = CursorLockMode.Locked;
         
         brakeForce = maxBrakeForce;
+        
+        if (_playerInput != null) {
+            _input = _playerInput;
+        } else if (_enemyAi != null) {
+            _input = _enemyAi;
+        } else {
+            Debug.LogError("No input assigned to hovercar controller");
+        }
+        
+        // Store the default rotation at the start of the script
+        aimTargetDefaultRotation = aimTarget.transform.localEulerAngles;
     }
 
     void Update() {
 
         updatePIDSettings();
         
-        move = _input.move;
-        altitude = _input.altitude;
-        sails = _input.sails;
-        lateralBrake = _input.lateralBrake;
-        
+        move = _input.ReadMove();
+        altitude = _input.ReadAltitude();
+        sails = _input.ReadSails();
+        lateralBrake = _input.ReadBrake();
+        aim = _input.ReadAim();
+
+        if (_aimingCamera != null) {
+            if (aim) {
+                _aimingCamera.Priority = 11;
+            }
+            else {
+                _aimingCamera.Priority = 9;
+            }
+        }
+
+        processAim();
+
     }
 
     private void updatePIDSettings() {
@@ -178,10 +221,8 @@ public class HovercarController : MonoBehaviour {
     }
 
     private void rotateSails() {
-        // TODO add pid controller to set target to rotate to
-        // Multiplying by 40 as a hack because I thought turn was too low. //TODO make setting
-
-        if (sails != 0) {
+        // It's called sails because this used to be a boat controller
+        if (sails != 0 && aim == false) {
             rb.AddTorque(Vector3.up * (sails * turnRate * Time.deltaTime), ForceMode.Force);
 
         } else {
@@ -189,6 +230,35 @@ public class HovercarController : MonoBehaviour {
             // When no input is read on sails i.e. "0" the ship will slowly stop turning
             rb.AddTorque(-rb.angularVelocity * turnDrag, ForceMode.Force);
         }
+    }
+
+    private void processAim() {
+        // If aiming, when `sails` input is not 0, rotate `aimTarget` by that amount
+        // If not aiming, rotate to default rotation
+
+        Vector3 targetEuler;
+        if (aim) {
+            float rotationAmount = sails * aimTurnRate * aimTurnDamper * Time.deltaTime;
+            targetRotation = aimTarget.transform.eulerAngles + Vector3.up * rotationAmount;
+            
+            // Smoothly interpolate rotation using Vector3.SmoothDamp
+            targetEuler = Vector3.SmoothDamp(aimTarget.transform.eulerAngles, targetRotation, ref rotationVelocity, aimSmoothTime);
+            
+        } else {
+            
+            // Set target rotation to point in the same direction as the hovercar
+            targetRotation = transform.eulerAngles;
+            targetEuler = targetRotation;
+        }
+
+        aimTarget.transform.eulerAngles = targetEuler;
+        
+        // set aimIKTarget transform to 1.73 units in front of the aimTarget, do not change y axis of aimIKTarget
+        // Vector3 newPosition = aimTarget.transform.position + aimTarget.transform.forward * 1.73f;
+        // aimIKTarget.transform.position = new Vector3(newPosition.x, aimIKTarget.transform.position.y, newPosition.z);
+        Vector3 newPosition = aimTarget.transform.position + aimTarget.transform.forward * 1.73f - aimTarget.transform.right * -0.5f;
+        aimIKTarget.transform.position = new Vector3(newPosition.x, aimIKTarget.transform.position.y, newPosition.z);
+
     }
 
     private void moveToTargetAltitude() {
@@ -229,6 +299,7 @@ public class HovercarController : MonoBehaviour {
             targetAltitude = new Vector3(0, (transform.position.y - hit.distance) + targetFloatAboveGround, 0);
         }
     }
+    
 
     private Quaternion ShortestRotation(Quaternion to, Quaternion from) {
         if (Quaternion.Dot(to, from) < 0) {
@@ -244,6 +315,7 @@ public class HovercarController : MonoBehaviour {
         return new Quaternion(input.x * scalar, input.y * scalar, input.z * scalar, input.w * scalar);
     }
 
+    
     public void UpdateUprightForce() {
         Quaternion currentRotation = transform.rotation;
         Vector3 targetRotVec = new Vector3(transform.forward.x, 0f, transform.forward.z);

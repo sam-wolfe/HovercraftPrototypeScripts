@@ -1,14 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using DefaultNamespace;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class InputManager : MonoBehaviour {
+public class InputManager : MonoBehaviour, ReadableInput {
 
     public float altitude { get; private set; }
     public Vector2 move { get; private set; }
     public float sails { get; private set; }
-    
+    public bool aim { get; private set; }
     public float lateralBrake { get; private set; }
     
     public void OnAltitude(InputAction.CallbackContext context) {
@@ -33,4 +34,38 @@ public class InputManager : MonoBehaviour {
     public void OnLateralBrake(InputAction.CallbackContext context) {
         lateralBrake = context.ReadValue<float>();
     }
+    
+    public void OnAim(InputAction.CallbackContext context) {
+        switch (context.phase) {
+            case InputActionPhase.Started:
+                aim = true;
+                break;
+            case InputActionPhase.Performed:
+                return;
+            case InputActionPhase.Canceled:
+                aim = false;
+                break;
+        }
+    }
+
+    public Vector2 ReadMove() {
+        return move;
+    }
+
+    public float ReadAltitude() {
+        return altitude;
+    }
+
+    public float ReadSails() {
+        return sails;
+    }
+
+    public bool ReadAim() {
+        return aim;
+    }
+    
+    public float ReadBrake() {
+        return lateralBrake;
+    }
+
 }
