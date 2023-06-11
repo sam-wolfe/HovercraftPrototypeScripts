@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using DefaultNamespace;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class EnemyAI : MonoBehaviour, ReadableInput {
     
@@ -10,6 +12,9 @@ public class EnemyAI : MonoBehaviour, ReadableInput {
     public float sails { get; private set; }
     public bool aim { get; private set; }
     public float lateralBrake { get; private set; }
+    
+    public event Action<InputAction.CallbackContext> OnMoveEvent;
+    public event Action<InputAction.CallbackContext> OnSailEvent;
 
     void Start() {
         move = new Vector2(0, 0.1f);

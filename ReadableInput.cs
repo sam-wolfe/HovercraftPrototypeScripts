@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace DefaultNamespace {
 
@@ -11,6 +13,8 @@ namespace DefaultNamespace {
         
         public float ReadBrake();
 
+        public event Action<InputAction.CallbackContext> OnMoveEvent;
+        public event Action<InputAction.CallbackContext> OnSailEvent;
     }
 
 }

@@ -1,6 +1,8 @@
+using System;
 using Cinemachine;
 using DefaultNamespace;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class HovercarController : MonoBehaviour {
 
@@ -109,14 +111,7 @@ public class HovercarController : MonoBehaviour {
 
     private PIDController _pid = new();
 
-    private void Start() {
-        rb = GetComponent<Rigidbody>();
-        targetAltitude = transform.position;
-        
-        Cursor.lockState = CursorLockMode.Locked;
-        
-        brakeForce = maxBrakeForce;
-        
+    private void Awake() {
         if (_playerInput != null) {
             _input = _playerInput;
         } else if (_enemyAi != null) {
@@ -124,6 +119,15 @@ public class HovercarController : MonoBehaviour {
         } else {
             Debug.LogError("No input assigned to hovercar controller");
         }
+    }
+
+    private void Start() {
+        rb = GetComponent<Rigidbody>();
+        targetAltitude = transform.position;
+        
+        Cursor.lockState = CursorLockMode.Locked;
+        
+        brakeForce = maxBrakeForce;
         
         // Store the default rotation at the start of the script
         aimTargetDefaultRotation = aimTarget.transform.localEulerAngles;
@@ -133,9 +137,9 @@ public class HovercarController : MonoBehaviour {
 
         updatePIDSettings();
         
-        move = _input.ReadMove();
+        // move = _input.ReadMove();
         altitude = _input.ReadAltitude();
-        sails = _input.ReadSails();
+        // sails = _input.ReadSails();
         lateralBrake = _input.ReadBrake();
         aim = _input.ReadAim();
 
@@ -190,6 +194,24 @@ public class HovercarController : MonoBehaviour {
             brakeForce = Mathf.MoveTowards(brakeForce, maxBrakeForce, breakDepleteRate / breakRefilRate * Time.deltaTime);
         }
     }
+    
+    private void ReadMove(InputAction.CallbackContext context)
+    {
+        move = context.ReadValue<Vector2>();
+        Debug.Log("Movement: " + move);
+    }
+    
+    private void ReadSail(InputAction.CallbackContext context)
+    {
+        sails = context.ReadValue<float>();
+        Debug.Log("Sails: " + sails);
+    }
+    
+    private void OnEnable() {
+        _input.OnMoveEvent += ReadMove;
+        _input.OnSailEvent += ReadSail;
+    }
+    
 
     private void moveShipHorizonal() {
         Vector3 forwardForce = transform.forward * move.y;
