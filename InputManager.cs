@@ -14,6 +14,7 @@ public class InputManager : MonoBehaviour, ReadableInput {
     public bool fire { get; private set; }
     public bool boost { get; private set; }
     public bool brake { get; private set; }
+    public Vector2 gunAim { get; private set; }
     
     public void OnAltitude(InputAction.CallbackContext context) {
         float newAltitude = context.ReadValue<float>();
@@ -27,6 +28,12 @@ public class InputManager : MonoBehaviour, ReadableInput {
 
         move = newMovement;
         // Debug.Log(move);
+    }
+    
+    public void OnGunAim(InputAction.CallbackContext context) {
+        Vector2 newGunAim = context.ReadValue<Vector2>();
+
+        gunAim = newGunAim;
     }
     
     public void OnSail(InputAction.CallbackContext context) {
@@ -65,6 +72,10 @@ public class InputManager : MonoBehaviour, ReadableInput {
 
     public bool ReadAim() {
         return aim;
+    }
+    
+    public Vector2 ReadGunAim() {
+        return gunAim;
     }
     
     public float ReadLatBrake() {

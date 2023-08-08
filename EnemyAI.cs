@@ -51,6 +51,10 @@ public class EnemyAI : MonoBehaviour, ReadableInput {
         throw new System.NotImplementedException();
     }
 
+    public Vector2 ReadGunAim() {
+        throw new System.NotImplementedException();
+    }
+
     public float ReadBrake() {
         return lateralBrake;
     }

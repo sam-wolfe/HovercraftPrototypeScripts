@@ -12,7 +12,7 @@ namespace DefaultNamespace {
         public float ReadLatBrake();
         public bool ReadFire();
         public bool ReadBoost();
-
+        public Vector2 ReadGunAim();
     }
 
 }

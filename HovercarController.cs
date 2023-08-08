@@ -88,11 +88,13 @@ public class HovercarController : MonoBehaviour {
     [SerializeField]
     [Tooltip("Gameobject that the camera uses to rotate around when aiming guns.")]
     private GameObject aimTarget;
-    [SerializeField] private float aimTurnRate = 100f;
+    [SerializeField] private float xAimRate = 100f;
+    [SerializeField] private float yAimRate = 100f;
     [SerializeField] private float aimTurnDamper = 0.5f;
     private Vector3 AIM_TARGET_DEFAULT_ROTATION = new Vector3(0, 0, 0);
     
-    public float aimSmoothTime = 0.1f;
+    // public float aimSmoothTime = 0.1f;
+    public float aimSmoothTime = 5f;
     private Vector3 aimTargetDefaultRotation;
     private Vector3 targetRotation;
     private Vector3 rotationVelocity;
@@ -131,6 +133,7 @@ public class HovercarController : MonoBehaviour {
     private bool fire;
     private bool boost;
     private bool brake;
+    private Vector2 gunAim;
 
     private Rigidbody rb;
 
@@ -170,7 +173,9 @@ public class HovercarController : MonoBehaviour {
         fire = _input.ReadFire();
         boost = _input.ReadBoost();
         brake = _input.ReadBrake();
+        gunAim = _input.ReadGunAim();
 
+        // wtf this is happening every frame, it should only happen when the player presses the button
         if (_aimingCamera != null) {
             if (aim) {
                 _aimingCamera.Priority = 11;
@@ -311,30 +316,55 @@ public class HovercarController : MonoBehaviour {
                 resetViewFlag = false;
             }
             
-            float rotationAmount = sails * aimTurnRate * aimTurnDamper * Time.deltaTime;
-            targetRotation = aimTarget.transform.localEulerAngles + Vector3.up * rotationAmount;
             
-            // Smoothly interpolate rotation using Vector3.SmoothDamp
-            targetEuler = Vector3.SmoothDamp(aimTarget.transform.localEulerAngles, targetRotation, ref rotationVelocity, aimSmoothTime);
+            // Calculate the desired rotation
+            Quaternion desiredRotation = aimTarget.transform.rotation;
+            desiredRotation *= Quaternion.AngleAxis(gunAim.x * xAimRate, Vector3.up);
+            desiredRotation *= Quaternion.AngleAxis(gunAim.y * yAimRate, Vector3.right);
+            
+                        
+            // Smoothly interpolate from the current rotation to the desired rotation
+            float step = aimSmoothTime * Time.deltaTime;
+            aimTarget.transform.rotation = Quaternion.Slerp(aimTarget.transform.rotation, desiredRotation, step);
+
+
+            var angles = aimTarget.transform.localEulerAngles;
+            angles.z = 0;
+            
+            var angle = aimTarget.transform.localEulerAngles.x;
+
+            bool blockQ = false;
             
            // Clamp rotation to ~180 degrees in front of pilot
-            if (targetEuler.y >= 180 && targetEuler.y < 240) {
-                targetEuler.y = 240;
-            } else if (targetEuler.y > 90 && targetEuler.y < 180) {
-                targetEuler.y = 90;
+            if (angles.y >= 180 && angles.y < 240) {
+                angles.y = 240;
+                
+            } else if (angles.y > 90 && angles.y < 180) {
+                angles.y = 90;
+            }
+            
+            //Clamp the Up/Down rotation
+            if (angle > 180 && angle < 340)
+            {
+                angles.x = 340;
+            }
+            else if(angle < 180 && angle > 40)
+            {
+                angles.x = 40;
             }
 
-            // Debug.Log(targetEuler.y);
-            aimTarget.transform.localEulerAngles = targetEuler;
+            aimTarget.transform.localEulerAngles = angles;
 
         } else {
-            
             resetViewFlag = true;
         }
         
         // set aimIKTarget transform to 5.73 units in front of the aimTarget, do not change y axis of aimIKTarget
-        Vector3 newPosition = aimTarget.transform.position + aimTarget.transform.forward * 5.73f - aimTarget.transform.right * -0.5f;
-        aimIKTarget.transform.position = new Vector3(newPosition.x, aimIKTarget.transform.position.y, newPosition.z);
+        Vector3 newPosition = 
+            aimTarget.transform.position + aimTarget.transform.forward * 5.73f - aimTarget.transform.right * -0.5f;
+        
+        aimIKTarget.transform.position = 
+            new Vector3(newPosition.x, newPosition.y, newPosition.z);
 
     }
 
