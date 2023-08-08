@@ -1,3 +1,4 @@
+using System;
 using Cinemachine;
 using DefaultNamespace;
 using UnityEngine;
@@ -33,6 +34,11 @@ public class HovercarController : MonoBehaviour {
     [Range(1, 200)]
     private float verticalAcceleration = 40f;
     
+    [SerializeField]
+    [Tooltip("Idle altitude of hovercar.")]
+    [Range(1, 10)]
+    private float hovercarRestHeight = 2f;
+    
     // private float minSpeed = 40f;
     [SerializeField]
     [Tooltip("How fast the ship can change direction, normally.")]
@@ -48,6 +54,7 @@ public class HovercarController : MonoBehaviour {
     [SerializeField]
     [Range(100, 1000)]
     private float maxBrakeForce = 500f;
+
     
     [SerializeField]
     [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
@@ -58,6 +65,25 @@ public class HovercarController : MonoBehaviour {
     [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
     [Range(1, 2000)]
     private float breakDepleteRate = 800f;
+    
+    [SerializeField]
+    [Tooltip("Boost force applied to hovercar when boost is active.")]
+    [Range(1, 1000)]
+    private float boostForce = 500f;
+    
+    [SerializeField]
+    [Range(100, 1000)]
+    private float maxBoostForce = 500f;
+    
+    [SerializeField]
+    [Tooltip("Rate the hovercars Boost force will regenerate, lower=faster.")] 
+    [Range(1, 100)]
+    private float boostRefilRate = 4f;
+    
+    [SerializeField] 
+    [Tooltip("Rate the hovercars Boost force will regenerate, lower=faster.")] 
+    [Range(1, 2000)]
+    private float boostDepleteRate = 800f;    
 
     [SerializeField]
     [Tooltip("Gameobject that the camera uses to rotate around when aiming guns.")]
@@ -102,6 +128,9 @@ public class HovercarController : MonoBehaviour {
     private float sails;
     private float lateralBrake;
     private bool aim;
+    private bool fire;
+    private bool boost;
+    private bool brake;
 
     private Rigidbody rb;
 
@@ -136,8 +165,11 @@ public class HovercarController : MonoBehaviour {
         move = _input.ReadMove();
         altitude = _input.ReadAltitude();
         sails = _input.ReadSails();
-        lateralBrake = _input.ReadBrake();
+        lateralBrake = _input.ReadLatBrake();
         aim = _input.ReadAim();
+        fire = _input.ReadFire();
+        boost = _input.ReadBoost();
+        brake = _input.ReadBrake();
 
         if (_aimingCamera != null) {
             if (aim) {
@@ -166,6 +198,27 @@ public class HovercarController : MonoBehaviour {
         rotateSails();
         UpdateUprightForce();
         UpdateLateralBreak();
+        UpdateBoost();
+        UpdateBrake();
+    }
+
+    private void UpdateBoost() {
+        // Read boost input and apply to forward momentum
+        if (boost) {
+            rb.AddForce(transform.forward * boostForce, ForceMode.Force);
+        }
+        
+        // Deplete and regenerate boost
+        depleteBoostGuage();
+    }
+    
+    private void UpdateBrake() {
+        // Read brake and nullify all momentum over time
+        
+        if (brake) {
+            rb.AddForce(-rb.velocity * Time.deltaTime * 100, ForceMode.Force);
+        }
+        
     }
     
     private void UpdateLateralBreak() {
@@ -188,6 +241,14 @@ public class HovercarController : MonoBehaviour {
             brakeForce = Mathf.MoveTowards(brakeForce, 0, breakDepleteRate * Time.deltaTime);
         } else {
             brakeForce = Mathf.MoveTowards(brakeForce, maxBrakeForce, breakDepleteRate / breakRefilRate * Time.deltaTime);
+        }
+    }
+    
+    private void depleteBoostGuage() {
+        if (boost) {
+            boostForce = Mathf.MoveTowards(boostForce, 0, boostDepleteRate * Time.deltaTime);
+        } else {
+            boostForce = Mathf.MoveTowards(boostForce, maxBoostForce, boostDepleteRate / boostRefilRate * Time.deltaTime);
         }
     }
 
@@ -231,6 +292,8 @@ public class HovercarController : MonoBehaviour {
             rb.AddTorque(-rb.angularVelocity * turnDrag, ForceMode.Force);
         }
     }
+    
+    private bool resetViewFlag = false;
 
     private void processAim() {
         // If aiming, when `sails` input is not 0, rotate `aimTarget` by that amount
@@ -238,25 +301,39 @@ public class HovercarController : MonoBehaviour {
 
         Vector3 targetEuler;
         if (aim) {
+
+            if (resetViewFlag) {
+                // Reset view to default rotation when aim is first pressed after not aiming.
+                // This is to prevent the aim camera from jumping when aim is released. 
+                targetRotation = transform.localEulerAngles;
+                targetEuler = new Vector3(0,0,0);
+                aimTarget.transform.localEulerAngles = targetEuler;
+                resetViewFlag = false;
+            }
+            
             float rotationAmount = sails * aimTurnRate * aimTurnDamper * Time.deltaTime;
-            targetRotation = aimTarget.transform.eulerAngles + Vector3.up * rotationAmount;
+            targetRotation = aimTarget.transform.localEulerAngles + Vector3.up * rotationAmount;
             
             // Smoothly interpolate rotation using Vector3.SmoothDamp
-            targetEuler = Vector3.SmoothDamp(aimTarget.transform.eulerAngles, targetRotation, ref rotationVelocity, aimSmoothTime);
+            targetEuler = Vector3.SmoothDamp(aimTarget.transform.localEulerAngles, targetRotation, ref rotationVelocity, aimSmoothTime);
             
+           // Clamp rotation to ~180 degrees in front of pilot
+            if (targetEuler.y >= 180 && targetEuler.y < 240) {
+                targetEuler.y = 240;
+            } else if (targetEuler.y > 90 && targetEuler.y < 180) {
+                targetEuler.y = 90;
+            }
+
+            // Debug.Log(targetEuler.y);
+            aimTarget.transform.localEulerAngles = targetEuler;
+
         } else {
             
-            // Set target rotation to point in the same direction as the hovercar
-            targetRotation = transform.eulerAngles;
-            targetEuler = targetRotation;
+            resetViewFlag = true;
         }
-
-        aimTarget.transform.eulerAngles = targetEuler;
         
-        // set aimIKTarget transform to 1.73 units in front of the aimTarget, do not change y axis of aimIKTarget
-        // Vector3 newPosition = aimTarget.transform.position + aimTarget.transform.forward * 1.73f;
-        // aimIKTarget.transform.position = new Vector3(newPosition.x, aimIKTarget.transform.position.y, newPosition.z);
-        Vector3 newPosition = aimTarget.transform.position + aimTarget.transform.forward * 1.73f - aimTarget.transform.right * -0.5f;
+        // set aimIKTarget transform to 5.73 units in front of the aimTarget, do not change y axis of aimIKTarget
+        Vector3 newPosition = aimTarget.transform.position + aimTarget.transform.forward * 5.73f - aimTarget.transform.right * -0.5f;
         aimIKTarget.transform.position = new Vector3(newPosition.x, aimIKTarget.transform.position.y, newPosition.z);
 
     }
@@ -294,9 +371,8 @@ public class HovercarController : MonoBehaviour {
                 shipPosition.z
             );
         RaycastHit hit;
-        float targetFloatAboveGround = 2f;
         if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.down), out hit, Mathf.Infinity)) {
-            targetAltitude = new Vector3(0, (transform.position.y - hit.distance) + targetFloatAboveGround, 0);
+            targetAltitude = new Vector3(0, (transform.position.y - hit.distance) + hovercarRestHeight, 0);
         }
     }
     

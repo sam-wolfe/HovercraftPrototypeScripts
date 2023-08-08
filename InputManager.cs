@@ -11,6 +11,9 @@ public class InputManager : MonoBehaviour, ReadableInput {
     public float sails { get; private set; }
     public bool aim { get; private set; }
     public float lateralBrake { get; private set; }
+    public bool fire { get; private set; }
+    public bool boost { get; private set; }
+    public bool brake { get; private set; }
     
     public void OnAltitude(InputAction.CallbackContext context) {
         float newAltitude = context.ReadValue<float>();
@@ -64,8 +67,65 @@ public class InputManager : MonoBehaviour, ReadableInput {
         return aim;
     }
     
-    public float ReadBrake() {
+    public float ReadLatBrake() {
         return lateralBrake;
+    }
+    
+    public bool ReadFire() {
+        return fire;
+    }
+    
+    public bool ReadBoost() {
+        return boost;
+    }
+    
+    public bool ReadBrake() {
+        return brake;
+    }
+    
+    public void OnFire(InputAction.CallbackContext context) {
+        switch (context.phase) {
+            case InputActionPhase.Started:
+                Debug.Log("Fire");
+                fire = true;
+                break;
+            case InputActionPhase.Performed:
+                return;
+            case InputActionPhase.Canceled:
+                fire = false;
+                Debug.Log("Fire");
+                break;
+        }
+    }
+    
+    public void OnBoost(InputAction.CallbackContext context) {
+        switch (context.phase) {
+            case InputActionPhase.Started:
+                Debug.Log("Boost");
+                boost = true;
+                break;
+            case InputActionPhase.Performed:
+                return;
+            case InputActionPhase.Canceled:
+                Debug.Log("Boost");
+                boost = false;
+                break;
+        }
+    }
+    
+    public void OnBrake(InputAction.CallbackContext context) {
+        switch (context.phase) {
+            case InputActionPhase.Started:
+                Debug.Log("Brake");
+                brake = true;
+                break;
+            case InputActionPhase.Performed:
+                return;
+            case InputActionPhase.Canceled:
+                Debug.Log("Brake");
+                brake = false;
+                break;
+        }
     }
 
 }

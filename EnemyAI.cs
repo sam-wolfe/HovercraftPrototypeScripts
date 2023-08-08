@@ -34,7 +34,23 @@ public class EnemyAI : MonoBehaviour, ReadableInput {
     public bool ReadAim() {
         return aim;
     }
-    
+
+    bool ReadableInput.ReadBrake() {
+        throw new System.NotImplementedException();
+    }
+
+    public float ReadLatBrake() {
+        throw new System.NotImplementedException();
+    }
+
+    public bool ReadFire() {
+        throw new System.NotImplementedException();
+    }
+
+    public bool ReadBoost() {
+        throw new System.NotImplementedException();
+    }
+
     public float ReadBrake() {
         return lateralBrake;
     }
