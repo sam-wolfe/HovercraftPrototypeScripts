@@ -316,18 +316,10 @@ public class HovercarController : MonoBehaviour {
                 resetViewFlag = false;
             }
             
-            
             // Calculate the desired rotation
-            Quaternion desiredRotation = aimTarget.transform.rotation;
-            desiredRotation *= Quaternion.AngleAxis(gunAim.x * xAimRate, Vector3.up);
-            desiredRotation *= Quaternion.AngleAxis(gunAim.y * yAimRate, Vector3.right);
+            aimTarget.transform.rotation *= Quaternion.AngleAxis(gunAim.x * xAimRate, Vector3.up);
+            aimTarget.transform.rotation *= Quaternion.AngleAxis(gunAim.y * yAimRate, Vector3.right);
             
-                        
-            // Smoothly interpolate from the current rotation to the desired rotation
-            float step = aimSmoothTime * Time.deltaTime;
-            aimTarget.transform.rotation = Quaternion.Slerp(aimTarget.transform.rotation, desiredRotation, step);
-
-
             var angles = aimTarget.transform.localEulerAngles;
             angles.z = 0;
             
@@ -338,18 +330,15 @@ public class HovercarController : MonoBehaviour {
            // Clamp rotation to ~180 degrees in front of pilot
             if (angles.y >= 180 && angles.y < 240) {
                 angles.y = 240;
-                
             } else if (angles.y > 90 && angles.y < 180) {
                 angles.y = 90;
             }
             
             //Clamp the Up/Down rotation
-            if (angle > 180 && angle < 340)
-            {
+            if (angle > 180 && angle < 340) {
                 angles.x = 340;
             }
-            else if(angle < 180 && angle > 40)
-            {
+            else if(angle < 180 && angle > 40) {
                 angles.x = 40;
             }
 
