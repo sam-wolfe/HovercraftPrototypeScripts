@@ -18,71 +18,86 @@ public class HovercarController : MonoBehaviour {
     [Header("Movement Settings")]
     [SerializeField]
     [Range(1, 100)]
+    // On Fan
     private float accelerationRate = 10f;
     
     [SerializeField]
     [Tooltip("Maximum horizontal speed of hovercar")]
     [Range(1, 100)]
+    // On Fan
     private float maxSpeed = 40f;
     
     [SerializeField] [Tooltip("Rate the hovercar will stop moving when no input is given")] 
     [Range(0.1f, 100f)]
+    // On Hydrolic
     private float carDrag = 20f;
     
     [SerializeField]
     [Tooltip("How fast the ship can change altitude, affected by hovercar mass.")]
     [Range(1, 200)]
+    // On Fan
     private float verticalAcceleration = 40f;
     
     [SerializeField]
     [Tooltip("Idle altitude of hovercar.")]
     [Range(1, 10)]
+    // On Gyro
     private float hovercarRestHeight = 2f;
     
     // private float minSpeed = 40f;
     [SerializeField]
     [Tooltip("How fast the ship can change direction, normally.")]
     [Range(1, 800)]
+    // On Gryo
     private float turnRate = 100f;
 
     [SerializeField] [Tooltip("Rate the hovercar will stop turning when no input is given")] 
     [Range(0.1f, 40f)]
+    // On Gryo
     private float turnDrag = 10f;
     
     [SerializeField]
+    // On PressureVent
     private float brakeForce = 500f;
     [SerializeField]
     [Range(100, 1000)]
+    // On PressureVent
     private float maxBrakeForce = 500f;
 
     
     [SerializeField]
     [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
     [Range(1, 10)]
+    // On PressureVent
     private float breakRefilRate = 4f;
 
     [SerializeField] 
     [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
     [Range(1, 2000)]
+    // On PressureVent
     private float breakDepleteRate = 800f;
     
     [SerializeField]
     [Tooltip("Boost force applied to hovercar when boost is active.")]
     [Range(1, 1000)]
+    // On Booster
     private float boostForce = 500f;
     
     [SerializeField]
     [Range(100, 1000)]
+    // On Booster
     private float maxBoostForce = 500f;
     
     [SerializeField]
     [Tooltip("Rate the hovercars Boost force will regenerate, lower=faster.")] 
     [Range(1, 100)]
+    // On Booster
     private float boostRefilRate = 4f;
     
     [SerializeField] 
     [Tooltip("Rate the hovercars Boost force will regenerate, lower=faster.")] 
     [Range(1, 2000)]
+    // On Booster
     private float boostDepleteRate = 800f;    
 
     [SerializeField]
@@ -110,6 +125,7 @@ public class HovercarController : MonoBehaviour {
     private ReadableInput _input;
 
     [Header("Dev")]
+    // On fan targetAltitudeSpeed
     [SerializeField] private float devTargetAltitudeSpeed = 5f;
     
     // PID settings
@@ -140,7 +156,11 @@ public class HovercarController : MonoBehaviour {
     public Vector3 targetAltitude { get; private set; }
 
     private PIDController _pid = new();
+    
+    private bool resetBoostFlag = false;
+    private bool resetViewFlag = false;
 
+    
     private void Start() {
         rb = GetComponent<Rigidbody>();
         targetAltitude = transform.position;
@@ -161,6 +181,7 @@ public class HovercarController : MonoBehaviour {
         aimTargetDefaultRotation = aimTarget.transform.localEulerAngles;
     }
 
+    
     void Update() {
 
         updatePIDSettings();
@@ -189,6 +210,7 @@ public class HovercarController : MonoBehaviour {
 
     }
 
+    
     private void updatePIDSettings() {
         _pid.proportionalGain = pTerm;
         _pid.integralGain = iTerm;
@@ -196,6 +218,7 @@ public class HovercarController : MonoBehaviour {
         
     }
 
+    
     private void FixedUpdate() {
         updateTargetAltitue();
         moveShipHorizonal();
@@ -206,16 +229,26 @@ public class HovercarController : MonoBehaviour {
         UpdateBoost();
         UpdateBrake();
     }
+    
 
     private void UpdateBoost() {
         // Read boost input and apply to forward momentum
         if (boost) {
             rb.AddForce(transform.forward * boostForce, ForceMode.Force);
+            if (resetBoostFlag) {
+                var source = GetComponent<CinemachineImpulseSource>();
+                source.GenerateImpulse();
+                resetBoostFlag = false;
+            }
+        }
+        else {
+            resetBoostFlag = true;
         }
         
         // Deplete and regenerate boost
         depleteBoostGuage();
     }
+    
     
     private void UpdateBrake() {
         // Read brake and nullify all momentum over time
@@ -225,6 +258,7 @@ public class HovercarController : MonoBehaviour {
         }
         
     }
+    
     
     private void UpdateLateralBreak() {
         depleteBreakGuage();
@@ -238,6 +272,7 @@ public class HovercarController : MonoBehaviour {
         }
     }
 
+    
     private void depleteBreakGuage() {
         // while lateralBreak != 0, reduce breakForce to 0 over 1 second.
         // when lateralBreak == 0, increase breakForce to max over 10 seconds.
@@ -249,6 +284,7 @@ public class HovercarController : MonoBehaviour {
         }
     }
     
+    
     private void depleteBoostGuage() {
         if (boost) {
             boostForce = Mathf.MoveTowards(boostForce, 0, boostDepleteRate * Time.deltaTime);
@@ -257,6 +293,7 @@ public class HovercarController : MonoBehaviour {
         }
     }
 
+    
     private void moveShipHorizonal() {
         Vector3 forwardForce = transform.forward * move.y;
         
@@ -286,6 +323,7 @@ public class HovercarController : MonoBehaviour {
         }
     }
 
+    
     private void rotateSails() {
         // It's called sails because this used to be a boat controller
         if (sails != 0 && aim == false) {
@@ -298,8 +336,7 @@ public class HovercarController : MonoBehaviour {
         }
     }
     
-    private bool resetViewFlag = false;
-
+    
     private void processAim() {
         // If aiming, when `sails` input is not 0, rotate `aimTarget` by that amount
         // If not aiming, rotate to default rotation
@@ -404,6 +441,7 @@ public class HovercarController : MonoBehaviour {
             return to * Quaternion.Inverse(from);
         }
     }
+    
     
     private Quaternion Multiply(Quaternion input, float scalar)
     {
