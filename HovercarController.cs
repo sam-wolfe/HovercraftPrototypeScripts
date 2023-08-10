@@ -14,92 +14,6 @@ public class HovercarController : MonoBehaviour {
     //  a parameter here.
     //
     // ------------------------------------------------
-    
-    [Header("Movement Settings (deprecated)")]
-    
-    [SerializeField]
-    [Range(1, 100)]
-    // On Fan
-    private float accelerationRate = 10f;
-    
-    [SerializeField]
-    [Tooltip("Maximum horizontal speed of hovercar")]
-    [Range(1, 100)]
-    // On Fan
-    private float maxSpeed = 40f;
-    
-    [SerializeField] [Tooltip("Rate the hovercar will stop moving when no input is given")] 
-    [Range(0.1f, 100f)]
-    // On Hydrolic
-    private float carDrag = 20f;
-    
-    [SerializeField]
-    [Tooltip("How fast the ship can change altitude, affected by hovercar mass.")]
-    [Range(1, 200)]
-    // On Fan
-    private float verticalAcceleration = 40f;
-    
-    [SerializeField]
-    [Tooltip("Idle altitude of hovercar.")]
-    [Range(1, 10)]
-    // On Gyro
-    private float hovercarRestHeight = 2f;
-    
-    // private float minSpeed = 40f;
-    [SerializeField]
-    [Tooltip("How fast the ship can change direction, normally.")]
-    [Range(1, 800)]
-    // On Gryo
-    private float turnRate = 100f;
-
-    [SerializeField] [Tooltip("Rate the hovercar will stop turning when no input is given")] 
-    [Range(0.1f, 40f)]
-    // On Gryo
-    private float turnDrag = 10f;
-    
-    [SerializeField]
-    // On PressureVent
-    private float brakeForce = 500f;
-    [SerializeField]
-    [Range(100, 1000)]
-    // On PressureVent
-    private float maxBrakeForce = 500f;
-
-    
-    [SerializeField]
-    [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
-    [Range(1, 10)]
-    // On PressureVent
-    private float breakRefilRate = 4f;
-
-    [SerializeField] 
-    [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
-    [Range(1, 2000)]
-    // On PressureVent
-    private float breakDepleteRate = 800f;
-    
-    [SerializeField]
-    [Tooltip("Boost force applied to hovercar when boost is active.")]
-    [Range(1, 1000)]
-    // On Booster
-    private float boostForce = 500f;
-    
-    [SerializeField]
-    [Range(100, 1000)]
-    // On Booster
-    private float maxBoostForce = 500f;
-    
-    [SerializeField]
-    [Tooltip("Rate the hovercars Boost force will regenerate, lower=faster.")] 
-    [Range(1, 100)]
-    // On Booster
-    private float boostRefilRate = 4f;
-    
-    [SerializeField] 
-    [Tooltip("Rate the hovercars Boost force will regenerate, lower=faster.")] 
-    [Range(1, 2000)]
-    // On Booster
-    private float boostDepleteRate = 800f;    
 
     [Header("Aim Settings")]
     [SerializeField]
@@ -110,7 +24,6 @@ public class HovercarController : MonoBehaviour {
     [SerializeField] private float aimTurnDamper = 0.5f;
     private Vector3 AIM_TARGET_DEFAULT_ROTATION = new Vector3(0, 0, 0);
     
-    // public float aimSmoothTime = 0.1f;
     public float aimSmoothTime = 5f;
     private Vector3 aimTargetDefaultRotation;
     private Vector3 targetRotation;
@@ -135,8 +48,6 @@ public class HovercarController : MonoBehaviour {
     private ReadableInput _input;
 
     [Header("Dev")]
-    // On fan targetAltitudeSpeed
-    [SerializeField] private float devTargetAltitudeSpeed = 5f;
     
     // PID settings
     [SerializeField] private float pTerm = 0f;
@@ -185,7 +96,7 @@ public class HovercarController : MonoBehaviour {
         
         Cursor.lockState = CursorLockMode.Locked;
         
-        brakeForce = maxBrakeForce;
+        _pressureVent.brakeForce = _pressureVent.maxBrakeForce;
         
         if (_playerInput != null) {
             _input = _playerInput;
@@ -252,7 +163,7 @@ public class HovercarController : MonoBehaviour {
     private void UpdateBoost() {
         // Read boost input and apply to forward momentum
         if (boost) {
-            rb.AddForce(transform.forward * boostForce, ForceMode.Force);
+            rb.AddForce(transform.forward * _booster.boostForce, ForceMode.Force);
             if (resetBoostFlag) {
                 _boostImpulse.GenerateImpulse();
                 resetBoostFlag = false;
@@ -283,13 +194,13 @@ public class HovercarController : MonoBehaviour {
         if (lateralBrake > 0) {
             //Apply force until sideways velocity is 0 but retain forward and backward velocity
             
-            rb.AddForce(-transform.right * lateralBrake * brakeForce, ForceMode.Force);
+            rb.AddForce(-transform.right * lateralBrake *_pressureVent.brakeForce, ForceMode.Force);
             if (resetLatBrakeFlag) {
                 _LeftBrakeImpulse.GenerateImpulse();
                 resetLatBrakeFlag = false;
             }
         } else if (lateralBrake < 0) {
-            rb.AddForce(transform.right * -lateralBrake * brakeForce, ForceMode.Force);
+            rb.AddForce(transform.right * -lateralBrake * _pressureVent.brakeForce, ForceMode.Force);
             if (resetLatBrakeFlag) {
                 _RightBrakeImpulse.GenerateImpulse();
                 resetLatBrakeFlag = false;
@@ -305,18 +216,18 @@ public class HovercarController : MonoBehaviour {
         // when lateralBreak == 0, increase breakForce to max over 10 seconds.
         // TODO make this a setting
         if (lateralBrake != 0) {
-            brakeForce = Mathf.MoveTowards(brakeForce, 0, breakDepleteRate * Time.deltaTime);
+            _pressureVent.brakeForce = Mathf.MoveTowards(_pressureVent.brakeForce, 0, _pressureVent.breakDepleteRate * Time.deltaTime);
         } else {
-            brakeForce = Mathf.MoveTowards(brakeForce, maxBrakeForce, breakDepleteRate / breakRefilRate * Time.deltaTime);
+            _pressureVent.brakeForce = Mathf.MoveTowards(_pressureVent.brakeForce, _pressureVent.maxBrakeForce, _pressureVent.breakDepleteRate / _pressureVent.breakRefilRate * Time.deltaTime);
         }
     }
     
     
     private void depleteBoostGuage() {
         if (boost) {
-            boostForce = Mathf.MoveTowards(boostForce, 0, boostDepleteRate * Time.deltaTime);
+            _booster.boostForce = Mathf.MoveTowards(_booster.boostForce, 0, _booster.boostDepleteRate * Time.deltaTime);
         } else {
-            boostForce = Mathf.MoveTowards(boostForce, maxBoostForce, boostDepleteRate / boostRefilRate * Time.deltaTime);
+            _booster.boostForce = Mathf.MoveTowards(_booster.boostForce, _booster.maxBoostForce, _booster.boostDepleteRate / _booster.boostRefillRate * Time.deltaTime);
         }
     }
 
@@ -328,11 +239,11 @@ public class HovercarController : MonoBehaviour {
 
         Vector3 direction = forwardForce + sideForce;
         
-        rb.AddForce(direction * accelerationRate, ForceMode.Force);
+        rb.AddForce(direction * _fan.accelerationRate, ForceMode.Force);
         
         // Limit speed
-        if (rb.velocity.magnitude > maxSpeed) {
-            rb.velocity = rb.velocity.normalized * maxSpeed;
+        if (rb.velocity.magnitude > _fan.maxSpeed) {
+            rb.velocity = rb.velocity.normalized * _fan.maxSpeed;
         }
         
         if (move.x == 0 && move.y == 0) {
@@ -340,9 +251,9 @@ public class HovercarController : MonoBehaviour {
             // When there is no input on the move vector, slowly kill horizontal velocity, but allow vertical velocity
             // to continue increasing using the Mathf.MoveTowards function.
             Vector3 newVelocity = new Vector3(
-                Mathf.MoveTowards(rb.velocity.x, 0, carDrag * Time.deltaTime), 
+                Mathf.MoveTowards(rb.velocity.x, 0, _hydrolic.carDrag * Time.deltaTime), 
                 rb.velocity.y, 
-                Mathf.MoveTowards(rb.velocity.z, 0, carDrag * Time.deltaTime)
+                Mathf.MoveTowards(rb.velocity.z, 0, _hydrolic.carDrag * Time.deltaTime)
             );
             
             rb.velocity = newVelocity;
@@ -354,12 +265,12 @@ public class HovercarController : MonoBehaviour {
     private void rotateSails() {
         // It's called sails because this used to be a boat controller
         if (sails != 0 && aim == false) {
-            rb.AddTorque(Vector3.up * (sails * turnRate * Time.deltaTime), ForceMode.Force);
+            rb.AddTorque(Vector3.up * (sails * _gyro.turnRate * Time.deltaTime), ForceMode.Force);
 
         } else {
             
             // When no input is read on sails i.e. "0" the ship will slowly stop turning
-            rb.AddTorque(-rb.angularVelocity * turnDrag, ForceMode.Force);
+            rb.AddTorque(-rb.angularVelocity * _gyro.turnDrag, ForceMode.Force);
         }
     }
     
@@ -437,7 +348,7 @@ public class HovercarController : MonoBehaviour {
             // Warning: Unintentially related to PID controller. If the verticalAcceleration is too low
             // the PID controller will not be able to reach the target altitude.
             var localMin = float.MinValue;
-            Vector3 newThrust = new Vector3(0, Mathf.Clamp(input, localMin, verticalAcceleration), 0);
+            Vector3 newThrust = new Vector3(0, Mathf.Clamp(input, localMin, _fan.verticalAcceleration), 0);
             //------------------------------------------------------------
 
             rb.AddForce(newThrust, ForceMode.Force);
@@ -450,12 +361,12 @@ public class HovercarController : MonoBehaviour {
         
         targetAltitude = new Vector3(
                 shipPosition.x, 
-                targetAltitude.y + (altitude * devTargetAltitudeSpeed * Time.deltaTime), 
+                targetAltitude.y + (altitude * _fan.targetAltitudeSpeed * Time.deltaTime), 
                 shipPosition.z
             );
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.down), out hit, Mathf.Infinity)) {
-            targetAltitude = new Vector3(0, (transform.position.y - hit.distance) + hovercarRestHeight, 0);
+            targetAltitude = new Vector3(0, (transform.position.y - hit.distance) + _gyro.hovercarRestHeight, 0);
         }
     }
     

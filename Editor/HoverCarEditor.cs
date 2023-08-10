@@ -6,13 +6,13 @@ public class HoverCarEditor : Editor
 {
     public override void OnInspectorGUI()
     {
-        // Draw the default inspector for ObjectA
+        // Draw the default inspector for HoverCarEditor
         DrawDefaultInspector();
 
-        // Get the ObjectA instance
+        // Get the HoverCarEditor instance
         HovercarController hovercar = (HovercarController)target;
 
-        // If the objectBSettings field is not null, draw its properties in the inspector
+        // If the other object field is not null, draw its properties in the inspector
         if (hovercar._gyro != null)
         {
             GUILayout.Space(10);
