@@ -16,6 +16,13 @@ public class HovercarController : MonoBehaviour {
     // ------------------------------------------------
     
     [Header("Movement Settings")]
+        
+    [SerializeField] private Gyro _gyro;
+    [SerializeField] private Booster _booster;
+    [SerializeField] private Fan _fan;
+    [SerializeField] private PressureVent _pressureVent;
+    [SerializeField] private Hydrolic _hydrolic;
+    
     [SerializeField]
     [Range(1, 100)]
     // On Fan
@@ -100,6 +107,7 @@ public class HovercarController : MonoBehaviour {
     // On Booster
     private float boostDepleteRate = 800f;    
 
+    [Header("Aim Settings")]
     [SerializeField]
     [Tooltip("Gameobject that the camera uses to rotate around when aiming guns.")]
     private GameObject aimTarget;
@@ -148,7 +156,6 @@ public class HovercarController : MonoBehaviour {
     // CM Virtual camera to switch to when aiming
     [SerializeField] private CinemachineVirtualCamera _aimingCamera;
 
-    
     private Vector2 move;
     private float altitude;
     private float sails;
