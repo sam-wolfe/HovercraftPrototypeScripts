@@ -115,6 +115,14 @@ public class HovercarController : MonoBehaviour {
     private Vector3 rotationVelocity;
     [SerializeField] private GameObject aimIKTarget;
     
+    [Header("Impulses")]
+    [SerializeField]
+    private CinemachineImpulseSource _boostImpulse;
+    [SerializeField]
+    private CinemachineImpulseSource _LeftBrakeImpulse;
+    [SerializeField]
+    private CinemachineImpulseSource _RightBrakeImpulse;
+    
     [Header("Input")]
 
     // TODO make interface that inputs share
@@ -159,6 +167,7 @@ public class HovercarController : MonoBehaviour {
     
     private bool resetBoostFlag = false;
     private bool resetViewFlag = false;
+    bool resetLatBrakeFlag = false;
 
     
     private void Start() {
@@ -236,8 +245,7 @@ public class HovercarController : MonoBehaviour {
         if (boost) {
             rb.AddForce(transform.forward * boostForce, ForceMode.Force);
             if (resetBoostFlag) {
-                var source = GetComponent<CinemachineImpulseSource>();
-                source.GenerateImpulse();
+                _boostImpulse.GenerateImpulse();
                 resetBoostFlag = false;
             }
         }
@@ -267,8 +275,18 @@ public class HovercarController : MonoBehaviour {
             //Apply force until sideways velocity is 0 but retain forward and backward velocity
             
             rb.AddForce(-transform.right * lateralBrake * brakeForce, ForceMode.Force);
+            if (resetLatBrakeFlag) {
+                _LeftBrakeImpulse.GenerateImpulse();
+                resetLatBrakeFlag = false;
+            }
         } else if (lateralBrake < 0) {
             rb.AddForce(transform.right * -lateralBrake * brakeForce, ForceMode.Force);
+            if (resetLatBrakeFlag) {
+                _RightBrakeImpulse.GenerateImpulse();
+                resetLatBrakeFlag = false;
+            }
+        } else {
+            resetLatBrakeFlag = true;
         }
     }
 
