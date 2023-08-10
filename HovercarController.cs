@@ -15,13 +15,7 @@ public class HovercarController : MonoBehaviour {
     //
     // ------------------------------------------------
     
-    [Header("Movement Settings")]
-        
-    [SerializeField] private Gyro _gyro;
-    [SerializeField] private Booster _booster;
-    [SerializeField] private Fan _fan;
-    [SerializeField] private PressureVent _pressureVent;
-    [SerializeField] private Hydrolic _hydrolic;
+    [Header("Movement Settings (deprecated)")]
     
     [SerializeField]
     [Range(1, 100)]
@@ -155,6 +149,14 @@ public class HovercarController : MonoBehaviour {
     
     // CM Virtual camera to switch to when aiming
     [SerializeField] private CinemachineVirtualCamera _aimingCamera;
+    
+    [Header("Movement Settings")]
+        
+    [SerializeField] public Gyro _gyro;
+    [SerializeField] public Booster _booster;
+    [SerializeField] public Fan _fan;
+    [SerializeField] public PressureVent _pressureVent;
+    [SerializeField] public Hydrolic _hydrolic;
 
     private Vector2 move;
     private float altitude;
