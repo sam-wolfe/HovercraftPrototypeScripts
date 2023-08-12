@@ -16,13 +16,8 @@ public class HovercarController : MonoBehaviour {
     // ------------------------------------------------
 
     [Header("Aim Settings")]
-    [SerializeField]
-    [Tooltip("Gameobject that the camera uses to rotate around when aiming guns.")]
-    private GameObject aimTarget;
-    [SerializeField] private float xAimRate = 100f;
-    [SerializeField] private float yAimRate = 100f;
-    
     private Vector3 rotationVelocity;
+
     [SerializeField] private GameObject aimIKTarget;
     [SerializeField] private Camera mainCamera;
     
@@ -55,7 +50,6 @@ public class HovercarController : MonoBehaviour {
     [SerializeField] private float _uprightStrengthDamper = 0.5f;
     
     // CM Virtual camera to switch to when aiming
-    // [SerializeField] private CinemachineVirtualCamera _aimingCamera;
     [SerializeField] private CinemachineFreeLook _aimingCamera;
     
     public Vector3 targetAltitude { get; private set; }
@@ -106,9 +100,6 @@ public class HovercarController : MonoBehaviour {
         } else {
             Debug.LogError("No input assigned to hovercar controller");
         }
-        
-        // Store the default rotation at the start of the script
-        // aimTargetDefaultRotation = aimTarget.transform.localEulerAngles;
     }
 
     
@@ -283,7 +274,7 @@ public class HovercarController : MonoBehaviour {
     
     
     private void processAim() {
-        // If aiming, when `sails` input is not 0, rotate `aimTarget` by that amount
+        // Aiming is mostly handled directly by cinemachine.
         // If not aiming, rotate to default rotation
 
         Vector3 targetEuler;
@@ -295,52 +286,13 @@ public class HovercarController : MonoBehaviour {
                 // targetRotation = transform.localEulerAngles;
                 _aimingCamera.m_XAxis.Value = 0;
                 _aimingCamera.m_YAxis.Value = 0.35f;
-                targetEuler = new Vector3(0,0,0);
-                aimTarget.transform.localEulerAngles = targetEuler;
                 resetViewFlag = false;
             }
             
-            // Calculate the desired rotation
-            // TODO - bug: aim rate controls step size of rotation, not speed of rotation. Makes every input
-            //  feel like a step, not a smooth rotation.
-            // aimTarget.transform.rotation *= Quaternion.AngleAxis(gunAim.x * xAimRate * Time.deltaTime, Vector3.up);
-            // aimTarget.transform.rotation *= Quaternion.AngleAxis(gunAim.y * yAimRate * Time.deltaTime, Vector3.right);
-            
-            var angles = aimTarget.transform.localEulerAngles;
-            angles.z = 0;
-            
-            var angle = aimTarget.transform.localEulerAngles.x;
-
-            bool blockQ = false;
-            
-           // Clamp rotation to ~180 degrees in front of pilot
-            if (angles.y >= 180 && angles.y < 240) {
-                angles.y = 240;
-            } else if (angles.y > 90 && angles.y < 180) {
-                angles.y = 90;
-            }
-            
-            //Clamp the Up/Down rotation
-            if (angle > 180 && angle < 340) {
-                angles.x = 340;
-            }
-            else if(angle < 180 && angle > 40) {
-                angles.x = 40;
-            }
-
-            // aimTarget.transform.localEulerAngles = angles;
-
         } else {
             resetViewFlag = true;
         }
         
-        // set aimIKTarget transform to 5.73 units in front of the aimTarget, do not change y axis of aimIKTarget
-        // Vector3 newPosition = 
-        //     aimTarget.transform.position + aimTarget.transform.forward * 5.73f - aimTarget.transform.right * -0.5f;
-        //
-        // aimIKTarget.transform.position = 
-        //     new Vector3(newPosition.x, newPosition.y, newPosition.z);
-
     }
 
     private void moveToTargetAltitude() {
