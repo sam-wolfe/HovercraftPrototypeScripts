@@ -214,18 +214,34 @@ public class HovercarController : MonoBehaviour {
         // when lateralBreak == 0, increase breakForce to max over 10 seconds.
         // TODO make this a setting
         if (lateralBrake != 0) {
-            _pressureVent.brakeForce = Mathf.MoveTowards(_pressureVent.brakeForce, 0, _pressureVent.breakDepleteRate * Time.deltaTime);
+            _pressureVent.brakeForce = Mathf.MoveTowards(
+                _pressureVent.brakeForce, 
+                0, 
+                _pressureVent.breakDepleteRate * Time.deltaTime
+            );
         } else {
-            _pressureVent.brakeForce = Mathf.MoveTowards(_pressureVent.brakeForce, _pressureVent.maxBrakeForce, _pressureVent.breakDepleteRate / _pressureVent.breakRefilRate * Time.deltaTime);
+            _pressureVent.brakeForce = Mathf.MoveTowards(
+                _pressureVent.brakeForce, 
+                _pressureVent.maxBrakeForce, 
+                _pressureVent.breakDepleteRate / _pressureVent.breakRefilRate * Time.deltaTime
+            );
         }
     }
     
     
     private void depleteBoostGuage() {
         if (boost) {
-            _booster.boostForce = Mathf.MoveTowards(_booster.boostForce, 0, _booster.boostDepleteRate * Time.deltaTime);
+            _booster.boostForce = Mathf.MoveTowards(
+                _booster.boostForce, 
+                0, 
+                _booster.boostDepleteRate * Time.deltaTime
+            );
         } else {
-            _booster.boostForce = Mathf.MoveTowards(_booster.boostForce, _booster.maxBoostForce, _booster.boostDepleteRate / _booster.boostRefillRate * Time.deltaTime);
+            _booster.boostForce = Mathf.MoveTowards(
+                _booster.boostForce, 
+                _booster.maxBoostForce, 
+                _booster.boostDepleteRate / _booster.boostRefillRate * Time.deltaTime
+            );
         }
     }
 
