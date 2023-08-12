@@ -21,14 +21,10 @@ public class HovercarController : MonoBehaviour {
     private GameObject aimTarget;
     [SerializeField] private float xAimRate = 100f;
     [SerializeField] private float yAimRate = 100f;
-    [SerializeField] private float aimTurnDamper = 0.5f;
-    private Vector3 AIM_TARGET_DEFAULT_ROTATION = new Vector3(0, 0, 0);
     
-    public float aimSmoothTime = 5f;
-    private Vector3 aimTargetDefaultRotation;
-    private Vector3 targetRotation;
     private Vector3 rotationVelocity;
     [SerializeField] private GameObject aimIKTarget;
+    [SerializeField] private Camera mainCamera;
     
     [Header("Impulses")]
     [SerializeField]
@@ -59,7 +55,13 @@ public class HovercarController : MonoBehaviour {
     [SerializeField] private float _uprightStrengthDamper = 0.5f;
     
     // CM Virtual camera to switch to when aiming
-    [SerializeField] private CinemachineVirtualCamera _aimingCamera;
+    // [SerializeField] private CinemachineVirtualCamera _aimingCamera;
+    [SerializeField] private CinemachineFreeLook _aimingCamera;
+    
+    public Vector3 targetAltitude { get; private set; }
+    
+    [SerializeField] private AudioClip _devAudio1;
+    [SerializeField] private AudioSource _audioSource;
     
     [Header("Movement Settings")]
         
@@ -81,7 +83,6 @@ public class HovercarController : MonoBehaviour {
 
     private Rigidbody rb;
 
-    public Vector3 targetAltitude { get; private set; }
 
     private PIDController _pid = new();
     
@@ -107,11 +108,12 @@ public class HovercarController : MonoBehaviour {
         }
         
         // Store the default rotation at the start of the script
-        aimTargetDefaultRotation = aimTarget.transform.localEulerAngles;
+        // aimTargetDefaultRotation = aimTarget.transform.localEulerAngles;
     }
 
     
     void Update() {
+
 
         updatePIDSettings();
         
@@ -149,6 +151,10 @@ public class HovercarController : MonoBehaviour {
 
     
     private void FixedUpdate() {
+        
+        // Place _aimIKTarget 20 units in front of the camera
+        aimIKTarget.transform.position = mainCamera.transform.position + mainCamera.transform.forward * 20;
+        
         updateTargetAltitue();
         moveShipHorizonal();
         moveToTargetAltitude();
@@ -167,6 +173,7 @@ public class HovercarController : MonoBehaviour {
             if (resetBoostFlag) {
                 _boostImpulse.GenerateImpulse();
                 resetBoostFlag = false;
+                _audioSource.PlayOneShot(_devAudio1);
             }
         }
         else {
@@ -285,15 +292,19 @@ public class HovercarController : MonoBehaviour {
             if (resetViewFlag) {
                 // Reset view to default rotation when aim is first pressed after not aiming.
                 // This is to prevent the aim camera from jumping when aim is released. 
-                targetRotation = transform.localEulerAngles;
+                // targetRotation = transform.localEulerAngles;
+                _aimingCamera.m_XAxis.Value = 0;
+                _aimingCamera.m_YAxis.Value = 0.35f;
                 targetEuler = new Vector3(0,0,0);
                 aimTarget.transform.localEulerAngles = targetEuler;
                 resetViewFlag = false;
             }
             
             // Calculate the desired rotation
-            aimTarget.transform.rotation *= Quaternion.AngleAxis(gunAim.x * xAimRate, Vector3.up);
-            aimTarget.transform.rotation *= Quaternion.AngleAxis(gunAim.y * yAimRate, Vector3.right);
+            // TODO - bug: aim rate controls step size of rotation, not speed of rotation. Makes every input
+            //  feel like a step, not a smooth rotation.
+            // aimTarget.transform.rotation *= Quaternion.AngleAxis(gunAim.x * xAimRate * Time.deltaTime, Vector3.up);
+            // aimTarget.transform.rotation *= Quaternion.AngleAxis(gunAim.y * yAimRate * Time.deltaTime, Vector3.right);
             
             var angles = aimTarget.transform.localEulerAngles;
             angles.z = 0;
@@ -317,18 +328,18 @@ public class HovercarController : MonoBehaviour {
                 angles.x = 40;
             }
 
-            aimTarget.transform.localEulerAngles = angles;
+            // aimTarget.transform.localEulerAngles = angles;
 
         } else {
             resetViewFlag = true;
         }
         
         // set aimIKTarget transform to 5.73 units in front of the aimTarget, do not change y axis of aimIKTarget
-        Vector3 newPosition = 
-            aimTarget.transform.position + aimTarget.transform.forward * 5.73f - aimTarget.transform.right * -0.5f;
-        
-        aimIKTarget.transform.position = 
-            new Vector3(newPosition.x, newPosition.y, newPosition.z);
+        // Vector3 newPosition = 
+        //     aimTarget.transform.position + aimTarget.transform.forward * 5.73f - aimTarget.transform.right * -0.5f;
+        //
+        // aimIKTarget.transform.position = 
+        //     new Vector3(newPosition.x, newPosition.y, newPosition.z);
 
     }
 

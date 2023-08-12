@@ -17,7 +17,7 @@ public class Fan : ScriptableObject {
     public float accelerationRate;
 
     [Tooltip("Maximum horizontal speed of hovercar")]
-    [Range(1, 100)]
+    [Range(1, 1000)]
     public float maxSpeed;
 
 

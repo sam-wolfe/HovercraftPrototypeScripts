@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewPressureVent", menuName = "ScriptableObjects/CarParts/PressureVent", order = 4)]
@@ -16,5 +17,9 @@ public class PressureVent : ScriptableObject {
     [Tooltip("Rate the hovercars break force will regenerate, lower=faster.")] 
     [Range(1, 2000)]
     public float breakDepleteRate = 800f;
+
+    private void OnEnable() {
+        brakeForce = maxBrakeForce;
+    }
 
 }
