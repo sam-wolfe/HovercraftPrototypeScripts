@@ -14,7 +14,7 @@ public class HovercarController : MonoBehaviour {
     //  a parameter here.
     //
     // ------------------------------------------------
-
+    
     [Header("Aim Settings")]
     private Vector3 rotationVelocity;
 
@@ -56,6 +56,15 @@ public class HovercarController : MonoBehaviour {
     
     [SerializeField] private AudioClip _devAudio1;
     [SerializeField] private AudioSource _audioSource;
+
+    [SerializeField] private float _maxParticleDistance = 5f;
+
+    [Header("References")] 
+    // TODO extract to a new class for handling particles 
+    [SerializeField]
+    private ParticleSystem _idleParticles;
+    [SerializeField] private ParticleSystem _motionParticlesA;
+    [SerializeField] private ParticleSystem _motionParticlesB;
     
     [Header("Movement Settings")]
         
@@ -154,6 +163,54 @@ public class HovercarController : MonoBehaviour {
         UpdateLateralBreak();
         UpdateBoost();
         UpdateBrake();
+
+        FindIdleParticleSpawn();
+        FindMotionParticleSpawn();
+    }
+
+    private void FindMotionParticleSpawn() {
+        // If velocity is > 1, raycast down to find the ground level and move _motionParticles to that y position and start.
+        // _motionParticles should be a child of the hovercar so it moves with it, so the x and z don't need to be modified.
+        if (rb.velocity.magnitude > 1) {
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, Vector3.down, out hit, _maxParticleDistance)) {
+                _motionParticlesA.transform.position = new Vector3(_motionParticlesA.transform.position.x, hit.point.y, _motionParticlesA.transform.position.z);
+                _motionParticlesB.transform.position = new Vector3(_motionParticlesB.transform.position.x, hit.point.y, _motionParticlesB.transform.position.z);
+                _motionParticlesA.transform.localPosition = new Vector3(0, _motionParticlesA.transform.localPosition.y, 10f);
+                _motionParticlesB.transform.localPosition = new Vector3(0, _motionParticlesB.transform.localPosition.y, 10f);
+                // Only play if not already playing
+                if (!_motionParticlesA.isPlaying) {
+                    _motionParticlesA.Play();
+                    _motionParticlesB.Play();
+                }
+            } else {
+                // If no ground is found, stop playing the particles
+                _motionParticlesA.Stop();
+                _motionParticlesB.Stop();
+            }
+        }
+        else {
+            _motionParticlesA.Stop();
+            _motionParticlesB.Stop();
+        }
+    }
+
+    private void FindIdleParticleSpawn() {
+        // If velocity is < 1, raycast down to find the ground and move _idleParticles to that position and start
+        // playing the particles
+        if (rb.velocity.magnitude < 1) {
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, Vector3.down, out hit, 100)) {
+                _idleParticles.transform.position = hit.point;
+                // Only play if not already playing
+                if (!_idleParticles.isPlaying) {
+                    _idleParticles.Play();
+                }
+            }
+        }
+        else {
+            _idleParticles.Stop();
+        }
     }
     
 
@@ -327,7 +384,8 @@ public class HovercarController : MonoBehaviour {
             // Warning: Unintentially related to PID controller. If the verticalAcceleration is too low
             // the PID controller will not be able to reach the target altitude.
             var localMin = float.MinValue;
-            Vector3 newThrust = new Vector3(0, Mathf.Clamp(input, localMin, _fan.verticalAcceleration), 0);
+            Vector3 newThrust = new Vector3(
+                0, Mathf.Clamp(input, localMin, _fan.verticalAcceleration), 0);
             //------------------------------------------------------------
 
             rb.AddForce(newThrust, ForceMode.Force);
